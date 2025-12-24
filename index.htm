@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>蛇音.io</title>
+    <title>Cantonese Speech Snake - Mobile Fix</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #222;
             font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
-            touch-action: none;
+            touch-action: none; /* Prevents default touch actions like zoom */
         }
 
         canvas {
@@ -102,22 +102,23 @@
 
         /* Mobile Button */
         #mobile-confirm-btn {
-            display: none;
+            display: none; /* Shown via JS */
             position: absolute;
-            bottom: 30px;
+            bottom: 50px; /* Moved up slightly to avoid bottom bezel */
             left: 50%;
             transform: translateX(-50%);
-            padding: 20px 50px;
+            padding: 25px 60px; /* Larger touch area */
             background-color: #4CAF50;
             color: white;
-            font-size: 22px;
+            font-size: 24px;
             border: none;
             border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             cursor: pointer;
-            z-index: 100;
+            z-index: 1000; /* Very high z-index */
             font-weight: bold;
-            border: 3px solid white;
+            border: 4px solid white;
+            pointer-events: auto; /* Ensure it receives clicks */
         }
         
         #mobile-confirm-btn:active {
@@ -139,7 +140,7 @@
     <div id="instruction-modal" class="modal">
         <h2 style="color:#d32f2f">讀出這個字!</h2>
         <span id="current-word-display" style="font-size: 80px; font-weight:bold; display:block; margin:20px 0; color:#333;"></span>
-        <div style="font-size: 14px; color: #666;">(Press Space/Enter)</div>
+        <div style="font-size: 14px; color: #666;">(Therapist: Press Space/Enter)</div>
     </div>
 
     <div id="gameover-modal" class="modal">
@@ -625,25 +626,58 @@
         requestAnimationFrame(gameLoop);
     }
 
-    // --- Inputs ---
-    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    // --- INPUT HANDLING FIXED FOR MOBILE ---
+    
+    // Updates mouse coordinates
+    window.addEventListener('mousemove', e => { 
+        mouse.x = e.clientX; 
+        mouse.y = e.clientY; 
+    });
+
+    // Special Touch Handler to fix button issue
     const handleTouch = (e) => {
-        e.preventDefault();
+        // Check if the user is touching a BUTTON or UI Element
+        if (e.target.tagName === 'BUTTON' || e.target.closest('.modal')) {
+            // Do NOT prevent default here; allow the click to register!
+            return;
+        }
+
+        // Otherwise, it's a game control touch
+        e.preventDefault(); 
+        
         mouse.x = e.touches[0].clientX;
         mouse.y = e.touches[0].clientY;
+        
         if (audioCtx.state === 'suspended') audioCtx.resume();
     };
+
+    // Use non-passive listener to allow preventDefault for game control
     window.addEventListener('touchmove', handleTouch, { passive: false });
     window.addEventListener('touchstart', handleTouch, { passive: false });
 
+    // Keyboard controls
     window.addEventListener('keydown', (e) => {
         if (gameState === 'PAUSED' && (e.code === 'Space' || e.code === 'Enter')) {
             completeWordChallenge();
         }
     });
 
-    mobileBtn.addEventListener('click', (e) => { e.stopPropagation(); completeWordChallenge(); });
-    restartBtn.addEventListener('click', (e) => { e.stopPropagation(); initGame(); });
+    // Attach listeners directly to buttons as well
+    mobileBtn.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        completeWordChallenge(); 
+    });
+    
+    // Handle "touchstart" on button specifically for fast response
+    mobileBtn.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        completeWordChallenge();
+    });
+
+    restartBtn.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        initGame(); 
+    });
 
     window.addEventListener('resize', resize);
     
@@ -653,5 +687,4 @@
 
 </script>
 </body>
-
 </html>
